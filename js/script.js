@@ -11,21 +11,31 @@ const paginate = (n) => {
   const paginationDiv = document.createElement('div');
   // ... and the ul for links
   const ulLinks = document.createElement('ul');
-  // add as many li with links as necessary
+  // add as many li with links as necessary (n)
   for (let i = 0; i < n ; i++){
+    // create li element
     const li = document.createElement('li');
+    // create a element
     const a = document.createElement('a');
+    // set the href attribute of a
     a.setAttribute('href', '#');
+    // set the class attribute of the first a to active
     if (i === 0) a.setAttribute('class', 'active');
+    // set the inner text of a to display the page number
     a.innerText = i + 1;
+    // append a to li
     li.appendChild(a);
+    // append li to ul
     ulLinks.appendChild(li);
   }
+  // add the ul to the pagination div
   paginationDiv.appendChild(ulLinks);
+  // set the pagination div's class
   paginationDiv.setAttribute('class', 'pagination');
+  // append the pagination div to the page
   page.appendChild(paginationDiv);
 }
-//
+// Set the css display property of the elements in the list to none if not in the range, '' otherwise
 const displayRange = (list, min, max) => {
   for (let i = 0; i < list.length; i++) {
     list[i].style.display = (i >= min && i < max) ? '' : 'none';
