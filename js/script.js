@@ -1,72 +1,144 @@
-// query the ul element
-const ul = document.querySelector('.student-list');
-// query all li
-const lis = document.querySelectorAll('.student-list li');
-// query the page div
+// GLOBAL VARIABLE
+const maxStudentsPerPage = 10;
+
+// **********************
+// Querys
+// **********************
+const pageHeader = document.getElementsByClassName('page-header')[0];
+const studentList = document.querySelector('.student-list').children;
 const page = document.querySelector('.page');
 
-// create a div for pagination links
-const paginate = (n) => {
-  // create the pagination div
+// **********************
+// functions
+// **********************
+const appendSearchBox = (el) => {
+  const div = document.createElement('div');
+  div.innerHTML = `<input placeholder="Search for students...">
+    <button>Search</button>`;
+  div.className = "student-search";
+  el.appendChild(div);
+}
+const appendPaginationDiv = (el) => {
   const paginationDiv = document.createElement('div');
-  // ... and the ul for links
-  const ulLinks = document.createElement('ul');
-  // add as many li with links as necessary (n)
-  for (let i = 0; i < n ; i++){
-    // create li element
-    const li = document.createElement('li');
-    // create a element
-    const a = document.createElement('a');
-    // set the href attribute of a
-    a.setAttribute('href', '#');
-    // set the class attribute of the first a to active
-    if (i === 0) a.setAttribute('class', 'active');
-    // set the inner text of a to display the page number
-    a.innerText = i + 1;
-    // append a to li
-    li.appendChild(a);
-    // append li to ul
-    ulLinks.appendChild(li);
-  }
-  // add the ul to the pagination div
-  paginationDiv.appendChild(ulLinks);
-  // set the pagination div's class
-  paginationDiv.setAttribute('class', 'pagination');
-  // append the pagination div to the page
-  page.appendChild(paginationDiv);
+  paginationDiv.className = 'pagination';
+  el.appendChild(paginationDiv);
 }
-// Set the css display property of the elements in the list to none if not in the range, '' otherwise
-const displayRange = (list, min, max) => {
+const markUnmatchedItems = (list, string) => {
+  const testExp = new RegExp(string);
+  // for each list item, retrieve h3 and span textContent and concatenate it with a space
   for (let i = 0; i < list.length; i++) {
-    list[i].style.display = (i >= min && i < max) ? '' : 'none';
+    const studentName = list[i].getElementsByTagName('h3')[0].textContent;
+    const studentMail = list[i].getElementsByClassName('email')[0].textContent;
+    // test for presence of match-not class
+    const hasMatchNotClass = /match-not/.test(list[i].className);
+    if ( ! testExp.test(studentName + " " + studentMail) ) {
+      // if matchNot is present leave it there or add it
+      if (! hasMatchNotClass) {
+        list[i].className += ' match-not';
+      }
+    } else if (hasMatchNotClass) {
+      list[i].classList.remove('match-not');
+    }
   }
 }
-
-// set the first childs of the listed elements active at the index
 const setOneActive = (list, index) => {
   for (let i = 0; i < list.length; i++) {
     list[i].firstChild.className = (i === index) ? 'active' : '';
   }
 }
-
-// if the ul has more than 10 items, create a pagination
-if (lis.length > 10) {
-  paginate( Math.floor(lis.length/10 + 1) );
-  //create a variable for the ul of links
-  const paginationUl = document.querySelector('.pagination');
-  // an array of pagination links
-  const links = document.querySelectorAll('.pagination li');
-
-  // at first display the 10 first li
-  displayRange(lis, 0, 10);
-  // eventListener on pagination to add and remove css display property
-  paginationUl.addEventListener('click', (e) => {
-    // display the item supposed to be on the page
-    let pageNumber = parseInt(e.target.textContent);
-    let min = (pageNumber - 1) * 10;
-    let max = min + 10;
-    displayRange(lis, min, max);
-    // change the attribute on the links
-    setOneActive(links, pageNumber - 1);
-  });
+const displayPage = (list, page) => {
+  // set the css display prop of elements in the list
+  // counts the elements to be displayed
+  let counter = 0;
+  // set range to be displayed
+  let min = (page - 1) * maxStudentsPerPage;
+  let max = page * maxStudentsPerPage;
+  for (let i = 0; i < list.length; i++) {
+    // does this item match the search ?
+    let match = ! list[i].className.includes('match-not');
+    // increment the counter if not-match not present
+    counter += match ? 1 : 0;
+    // set display '' if in the range && matches the search
+    list[i].style.display = match && counter > min && counter <= max ? '' : 'none';
+  }
 }
+const paginate = () => {
+  // count the items to be displayed (has not class match-not)
+  let elementsNumber = 0;
+  for (let i = 0; i < studentList.length; i++) {
+    elementsNumber += studentList[i].className.includes("match-not") ? 0 : 1;
+  }
+  // suppress sorry message if any
+  const sorry = document.getElementsByClassName('sorry-message')[0];
+  if (sorry) page.removeChild(sorry);
+  // replace the content of the pagination paginationDiv
+  paginationDiv.innerHTML = '';
+  // if more elements than maxStudentsPerPage
+  if ( elementsNumber > maxStudentsPerPage ) {
+    // add as many li with links as necessary numberOfPages
+    let numberOfPages = Math.ceil( elementsNumber/maxStudentsPerPage);
+    const ulLinks = document.createElement('ul');
+    // add as many links as number of pages
+    for (let i = 0; i < numberOfPages ; i++){
+      // create li element
+      const li = document.createElement('li');
+      // create a element
+      const a = document.createElement('a');
+      // set the href attribute of a
+      a.setAttribute('href', '#');
+      // set the class attribute of the first a to active
+      if (i === 0) a.setAttribute('class', 'active');
+      // set the inner text of a to display the page number
+      a.innerText = i + 1;
+      // append a to li
+      li.appendChild(a);
+      // append li to ul
+      ulLinks.appendChild(li);
+    }
+    // add the ul to the pagination div
+    paginationDiv.appendChild(ulLinks);
+    const links = document.querySelectorAll('.pagination li');
+    // set a event handler
+    ulLinks.addEventListener('click', (e) => {
+      // display the item supposed to be on the page
+      let pageNumber = parseInt(e.target.textContent);
+      displayPage(studentList, pageNumber);
+      setOneActive(links, pageNumber - 1);
+    });
+  } else {
+    if (elementsNumber === 0) {
+      const message = document.createElement('p');
+      message.className = "sorry-message";
+      message.innerText = 'Sorry, no match were found.';
+      page.appendChild(message);
+    }
+  }
+  displayPage(studentList, 1);
+}
+
+// ************************
+// Add elements to the page
+// ************************
+
+appendSearchBox(pageHeader);
+appendPaginationDiv(page);
+
+// query new elements created dynamically
+const searchBox = document.querySelector('input');
+const searchButton = document.querySelector('button');
+const paginationDiv = document.querySelector('.pagination');
+// ***************************
+// Search button event handler
+// ***************************
+
+searchButton.addEventListener('click', () => {
+  // change classes of list items acco
+  markUnmatchedItems(studentList, searchBox.value);
+  // refresh the pagination
+  paginate();
+});
+
+// **********************
+// paginate !
+// **********************
+paginate();
